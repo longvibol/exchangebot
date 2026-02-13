@@ -1,18 +1,15 @@
 import sys
+
 import requests
 import telebot
 from telebot import types
+
 from mytoken import TelegramConfig
 
 API_BASE_URL = "https://v6.exchangerate-api.com/v6"
 REQUEST_TIMEOUT_SEC = 10
-DEFAULT_AMOUNT = 100.0
 
-CURRENCIES = [
-    "USD",
-    "KHR",
-    "VND",
-]
+CURRENCIES = ["USD", "KHR", "VND"]
 
 DISPLAY_CURRENCY = {
     "KHR": "រៀល",
@@ -24,65 +21,33 @@ DISPLAY_EMOJI = {
     "VND": "🇻🇳",
 }
 
-try:
-    _config = TelegramConfig()
-except ValueError as exc:
-    print(f"Config error: {exc}", file=sys.stderr)
-    sys.exit(1)
+
+def _load_config() -> TelegramConfig:
+    try:
+        return TelegramConfig()
+    except ValueError as exc:
+        print(f"Config error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+_config = _load_config()
 bot = telebot.TeleBot(_config.get_token())
 TOKEN = _config.get_exchange_rate_token()
 _session = requests.Session()
 _pending_pairs = {}
 
 
-def _welcome_text():
+def _welcome_text() -> str:
     return (
-        "💱 Welcome! This bot converts currency amounts using live exchange rates.\n\n"
-        "📝 To convert, send a message in the format:\n"
+        "Welcome! This bot converts currency amounts using live exchange rates.\n\n"
+        "To convert, send a message in the format:\n"
         "<amount> <from_currency> <to_currency>\n"
         "Example: 100 USD EUR\n\n"
-        "👇 Or pick a currency pair below to convert the default amount."
+        "Or pick a currency pair below and then send the amount."
     )
 
 
-def convert_current(amount, from_currency, to_currency):
-    url = f"{API_BASE_URL}/{TOKEN}/latest/{from_currency}"
-    response = _session.get(url, timeout=REQUEST_TIMEOUT_SEC)
-    response.raise_for_status()
-    data = response.json()
-
-    if data.get("result") != "success":
-        raise ValueError(data.get("error-type", "unknown API error"))
-
-    rates = data.get("conversion_rates", {})
-    if to_currency not in rates:
-        raise ValueError(f"unknown currency: {to_currency}")
-
-    converted_rate = rates[to_currency]
-    return amount * converted_rate
-
-
-def _parse_message_text(text):
-    parts = text.split()
-    if len(parts) != 3:
-        raise ValueError("Expected: <amount> <from_currency> <to_currency>")
-
-    amount_str, from_currency, to_currency = parts
-    amount = float(amount_str)
-    if amount <= 0:
-        raise ValueError("Amount must be positive.")
-
-    return amount, from_currency.upper(), to_currency.upper()
-
-
-def _parse_amount_only(text):
-    amount = float(text.strip())
-    if amount <= 0:
-        raise ValueError("Amount must be positive.")
-    return amount
-
-
-def _build_currency_pairs_keyboard():
+def _build_currency_pairs_keyboard() -> types.InlineKeyboardMarkup:
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     buttons = []
     for from_currency in CURRENCIES:
@@ -96,6 +61,40 @@ def _build_currency_pairs_keyboard():
             buttons.append(types.InlineKeyboardButton(label, callback_data=callback_data))
     keyboard.add(*buttons)
     return keyboard
+
+
+def _parse_message_text(text: str):
+    parts = text.split()
+    if len(parts) != 3:
+        raise ValueError("Expected: <amount> <from_currency> <to_currency>")
+    amount_str, from_currency, to_currency = parts
+    amount = float(amount_str)
+    if amount <= 0:
+        raise ValueError("Amount must be positive.")
+    return amount, from_currency.upper(), to_currency.upper()
+
+
+def _parse_amount_only(text: str) -> float:
+    amount = float(text.strip())
+    if amount <= 0:
+        raise ValueError("Amount must be positive.")
+    return amount
+
+
+def convert_current(amount: float, from_currency: str, to_currency: str) -> float:
+    url = f"{API_BASE_URL}/{TOKEN}/latest/{from_currency}"
+    response = _session.get(url, timeout=REQUEST_TIMEOUT_SEC)
+    response.raise_for_status()
+    data = response.json()
+
+    if data.get("result") != "success":
+        raise ValueError(data.get("error-type", "unknown API error"))
+
+    rates = data.get("conversion_rates", {})
+    if to_currency not in rates:
+        raise ValueError(f"Unknown currency: {to_currency}")
+
+    return amount * rates[to_currency]
 
 
 @bot.message_handler(commands=["start", "help"])
@@ -121,17 +120,13 @@ def handle_pair_selection(call):
 
 @bot.message_handler(func=lambda m: True, content_types=["text"])
 def process_conversion(message):
-    bot.send_message(
-        message.chat.id,
-        _welcome_text(),
-        reply_markup=_build_currency_pairs_keyboard(),
-    )
-
     chat_id = message.chat.id
+    text = message.text.strip()
+
     if chat_id in _pending_pairs:
         from_currency, to_currency = _pending_pairs.pop(chat_id)
         try:
-            amount = _parse_amount_only(message.text)
+            amount = _parse_amount_only(text)
             result = convert_current(amount, from_currency, to_currency)
         except (ValueError, requests.RequestException) as exc:
             bot.reply_to(message, f"Error: {exc}")
@@ -139,24 +134,31 @@ def process_conversion(message):
 
         bot.reply_to(
             message,
-            f"{amount:,.2f} {from_currency} is approximately {result:,.2f} {DISPLAY_CURRENCY.get(to_currency, to_currency)}",
+            f"{amount:,.2f} {from_currency} is approximately "
+            f"{result:,.2f} {DISPLAY_CURRENCY.get(to_currency, to_currency)}",
         )
         return
 
     try:
-        amount, from_currency, to_currency = _parse_message_text(message.text)
+        amount, from_currency, to_currency = _parse_message_text(text)
         result = convert_current(amount, from_currency, to_currency)
     except (ValueError, requests.RequestException) as exc:
         bot.reply_to(message, f"Error: {exc}")
+        bot.send_message(
+            chat_id,
+            _welcome_text(),
+            reply_markup=_build_currency_pairs_keyboard(),
+        )
         return
 
     bot.reply_to(
         message,
-        f"{amount:,.2f} {from_currency} is approximately {result:,.2f} {DISPLAY_CURRENCY.get(to_currency, to_currency)}",
+        f"{amount:,.2f} {from_currency} is approximately "
+        f"{result:,.2f} {DISPLAY_CURRENCY.get(to_currency, to_currency)}",
     )
 
 
-def main():
+def main() -> None:
     print("Bot running...")
     bot.infinity_polling(skip_pending=True)
 

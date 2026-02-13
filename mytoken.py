@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 
 def _candidate_env_paths() -> list[Path]:
@@ -21,8 +22,8 @@ def _candidate_env_paths() -> list[Path]:
     return unique
 
 
-def _load_dotenv() -> Path | None:
-    env_path: Path | None = None
+def _load_dotenv() -> Optional[Path]:
+    env_path: Optional[Path] = None
     for candidate in _candidate_env_paths():
         if candidate.exists():
             env_path = candidate
