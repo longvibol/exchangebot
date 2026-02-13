@@ -1,28 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="280d699e-20b9-4967-b28d-3d63b03dc7ce" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/exchaneRate.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/exchaneRate.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2025.9" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/22.0" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/4.6" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/42.0.0" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build_oci_arm64.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build_oci_arm64_binary.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/convert.py" beforeDir="false" afterPath="$PROJECT_DIR$/convert.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/exchange-rate-bot.spec" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/mytoken.py" beforeDir="false" afterPath="$PROJECT_DIR$/mytoken.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyinstaller)" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_oci_arm64.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_oci_arm64_binary.sh" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

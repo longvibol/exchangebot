@@ -5,16 +5,14 @@ from typing import Optional
 
 
 def _candidate_env_paths() -> list[Path]:
-    paths = []
-    # 1) Current working directory (most common for deployed binaries)
-    paths.append(Path.cwd() / ".env")
-    # 2) Directory of the running executable (PyInstaller onefile)
-    paths.append(Path(sys.executable).resolve().parent / ".env")
-    # 3) Directory of this file (source run)
-    paths.append(Path(__file__).resolve().parent / ".env")
-    # Deduplicate while preserving order
+    paths = [
+        Path.cwd() / ".env",
+        Path(sys.executable).resolve().parent / ".env",
+        Path(__file__).resolve().parent / ".env",
+    ]
+
     seen = set()
-    unique = []
+    unique: list[Path] = []
     for p in paths:
         if p not in seen:
             seen.add(p)
@@ -22,7 +20,13 @@ def _candidate_env_paths() -> list[Path]:
     return unique
 
 
-def _load_dotenv() -> Optional[Path]:
+def _load_dotenv(force: bool = True) -> Optional[Path]:
+    """
+    Load .env variables into os.environ.
+
+    force=True means .env values OVERRIDE any existing environment variables.
+    This fixes cases where CloudShell already has TELEGRAM_BOT_TOKEN set to an old value.
+    """
     env_path: Optional[Path] = None
     for candidate in _candidate_env_paths():
         if candidate.exists():
@@ -35,16 +39,23 @@ def _load_dotenv() -> Optional[Path]:
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
+
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
+
+        if force:
+            os.environ[key] = value
+        else:
+            os.environ.setdefault(key, value)
+
     return env_path
 
 
 class TelegramConfig:
     def __init__(self):
-        self._env_path = _load_dotenv()
+        self._env_path = _load_dotenv(force=True)
+
         self._bot_token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
         self._exchange_rate_token = (os.getenv("EXCHANGE_RATE_TOKEN") or "").strip()
 
@@ -56,6 +67,7 @@ class TelegramConfig:
             raise ValueError(
                 "Missing TELEGRAM_BOT_TOKEN. Set it in .env or export it in the shell."
             )
+
         if ":" not in self._bot_token:
             token_hint = f"length={len(self._bot_token)}"
             if self._env_path:
@@ -64,6 +76,7 @@ class TelegramConfig:
                 "Invalid TELEGRAM_BOT_TOKEN. Telegram bot tokens must contain a colon. "
                 + token_hint
             )
+
         if not self._exchange_rate_token:
             raise ValueError(
                 "Missing EXCHANGE_RATE_TOKEN. Set it in .env or export it in the shell."
