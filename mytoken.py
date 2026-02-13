@@ -1,10 +1,33 @@
 import os
+import sys
 from pathlib import Path
 
 
+def _candidate_env_paths() -> list[Path]:
+    paths = []
+    # 1) Current working directory (most common for deployed binaries)
+    paths.append(Path.cwd() / ".env")
+    # 2) Directory of the running executable (PyInstaller onefile)
+    paths.append(Path(sys.executable).resolve().parent / ".env")
+    # 3) Directory of this file (source run)
+    paths.append(Path(__file__).resolve().parent / ".env")
+    # Deduplicate while preserving order
+    seen = set()
+    unique = []
+    for p in paths:
+        if p not in seen:
+            seen.add(p)
+            unique.append(p)
+    return unique
+
+
 def _load_dotenv() -> None:
-    env_path = Path(__file__).resolve().parent / ".env"
-    if not env_path.exists():
+    env_path = None
+    for candidate in _candidate_env_paths():
+        if candidate.exists():
+            env_path = candidate
+            break
+    if env_path is None:
         return
 
     for raw_line in env_path.read_text(encoding="utf-8").splitlines():
