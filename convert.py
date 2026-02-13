@@ -1,3 +1,4 @@
+import sys
 import requests
 import telebot
 from telebot import types
@@ -23,7 +24,11 @@ DISPLAY_EMOJI = {
     "VND": "🇻🇳",
 }
 
-_config = TelegramConfig()
+try:
+    _config = TelegramConfig()
+except ValueError as exc:
+    print(f"Config error: {exc}", file=sys.stderr)
+    sys.exit(1)
 bot = telebot.TeleBot(_config.get_token())
 TOKEN = _config.get_exchange_rate_token()
 _session = requests.Session()
