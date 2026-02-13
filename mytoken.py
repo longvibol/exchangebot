@@ -21,14 +21,14 @@ def _candidate_env_paths() -> list[Path]:
     return unique
 
 
-def _load_dotenv() -> None:
-    env_path = None
+def _load_dotenv() -> Path | None:
+    env_path: Path | None = None
     for candidate in _candidate_env_paths():
         if candidate.exists():
             env_path = candidate
             break
     if env_path is None:
-        return
+        return None
 
     for raw_line in env_path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
@@ -38,21 +38,30 @@ def _load_dotenv() -> None:
         key = key.strip()
         value = value.strip().strip('"').strip("'")
         os.environ.setdefault(key, value)
+    return env_path
 
 
 class TelegramConfig:
     def __init__(self):
-        _load_dotenv()
+        self._env_path = _load_dotenv()
         self._bot_token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
         self._exchange_rate_token = (os.getenv("EXCHANGE_RATE_TOKEN") or "").strip()
+
+        # Normalize common fullwidth colon copy/paste error.
+        if ":" not in self._bot_token and "：" in self._bot_token:
+            self._bot_token = self._bot_token.replace("：", ":")
 
         if not self._bot_token:
             raise ValueError(
                 "Missing TELEGRAM_BOT_TOKEN. Set it in .env or export it in the shell."
             )
         if ":" not in self._bot_token:
+            token_hint = f"length={len(self._bot_token)}"
+            if self._env_path:
+                token_hint += f", env={self._env_path}"
             raise ValueError(
-                "Invalid TELEGRAM_BOT_TOKEN. Telegram bot tokens must contain a colon."
+                "Invalid TELEGRAM_BOT_TOKEN. Telegram bot tokens must contain a colon. "
+                + token_hint
             )
         if not self._exchange_rate_token:
             raise ValueError(
