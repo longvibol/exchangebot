@@ -43,14 +43,21 @@ def _load_dotenv() -> None:
 class TelegramConfig:
     def __init__(self):
         _load_dotenv()
-        self._bot_token = os.getenv(
-            "TELEGRAM_BOT_TOKEN",
-            "8338627964:AAE5OBrqHfERvlqd-lv2dXFe_TAb_eOBiNc",
-        )
-        self._exchange_rate_token = os.getenv(
-            "EXCHANGE_RATE_TOKEN",
-            "ea624cd9cb8959181c27c91d",
-        )
+        self._bot_token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+        self._exchange_rate_token = (os.getenv("EXCHANGE_RATE_TOKEN") or "").strip()
+
+        if not self._bot_token:
+            raise ValueError(
+                "Missing TELEGRAM_BOT_TOKEN. Set it in .env or export it in the shell."
+            )
+        if ":" not in self._bot_token:
+            raise ValueError(
+                "Invalid TELEGRAM_BOT_TOKEN. Telegram bot tokens must contain a colon."
+            )
+        if not self._exchange_rate_token:
+            raise ValueError(
+                "Missing EXCHANGE_RATE_TOKEN. Set it in .env or export it in the shell."
+            )
 
     def get_token(self) -> str:
         return self._bot_token

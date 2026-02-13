@@ -23,8 +23,9 @@ DISPLAY_EMOJI = {
     "VND": "🇻🇳",
 }
 
-bot = telebot.TeleBot(TelegramConfig().get_token())
-TOKEN = TelegramConfig().get_exchange_rate_token()
+_config = TelegramConfig()
+bot = telebot.TeleBot(_config.get_token())
+TOKEN = _config.get_exchange_rate_token()
 _session = requests.Session()
 _pending_pairs = {}
 
@@ -74,6 +75,7 @@ def _parse_amount_only(text):
     if amount <= 0:
         raise ValueError("Amount must be positive.")
     return amount
+
 
 def _build_currency_pairs_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
